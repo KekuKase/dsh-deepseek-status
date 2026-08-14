@@ -1,5 +1,7 @@
 # dsh-deepseek-status
 
+A DeepSeek Harness (DSH) plugin that shows the **live DeepSeek official service status** (status.deepseek.com) in the Web UI sidebar — overall status, per-component statuses, active/recent incidents, and uptime percentages.
+
 DeepSeek Harness 插件：在 Web UI 侧边栏底部实时显示 **DeepSeek 官方服务状态**（status.deepseek.com 同源数据）。
 
 - 状态点 + 文字：绿=所有系统运行正常 / 蓝=维护中 / 黄=性能下降 / 橙=部分故障 / 红=严重故障 / 灰=状态未知
