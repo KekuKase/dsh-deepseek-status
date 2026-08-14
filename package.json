@@ -12,6 +12,11 @@
     "monitor"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KekuKase/dsh-status.git"
+  },
+  "homepage": "https://github.com/KekuKase/dsh-status#readme",
   "type": "module",
   "main": "lib/index.js",
   "files": [
