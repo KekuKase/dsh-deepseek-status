@@ -1,8 +1,8 @@
 # dsh-deepseek-status
 
-A DeepSeek Harness (DSH) plugin that shows the **live DeepSeek official service status** (status.deepseek.com) in the Web UI sidebar — overall status, per-component statuses, active/recent incidents, and uptime percentages.
+A DeepSeek Harness (DSH) plugin that shows the **live DeepSeek official service status** (status.deepseek.com) in the Web UI session header — overall status, per-component statuses, active/recent incidents, and uptime percentages.
 
-DeepSeek Harness 插件：在 Web UI 侧边栏底部实时显示 **DeepSeek 官方服务状态**（status.deepseek.com 同源数据）。
+DeepSeek Harness 插件：在 Web UI 会话头部实时显示 **DeepSeek 官方服务状态**（status.deepseek.com 同源数据）。
 
 - 状态点 + 文字：绿=所有系统运行正常 / 蓝=维护中 / 黄=性能下降 / 橙=部分故障 / 红=严重故障 / 灰=状态未知
 - 点击展开面板：总体状态、最后更新时间、各组件状态、进行中的事件/维护、最近事件、各组件可用率(uptime%)
@@ -20,7 +20,7 @@ dsh plugin --profile web add ./dsh-deepseek-status
 dsh plugin --profile web add ./dsh-deepseek-status-0.1.0.tgz
 ```
 
-安装后重启 `dsh web`（新客户端插件需要重启进程才会被扫描进浏览器清单），即可在侧边栏左下角看到状态点。
+安装后重启 `dsh web`（新客户端插件需要重启进程才会被扫描进浏览器清单），即可在会话头部看到状态点（点击展开详情面板）。
 
 ## 配置
 
