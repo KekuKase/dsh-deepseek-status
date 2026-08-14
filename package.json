@@ -1,6 +1,6 @@
 {
   "name": "dsh-deepseek-status",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DeepSeek Harness plugin: live DeepSeek official service status (status.deepseek.com) in the sidebar — overall status, component statuses, incidents, and uptime.",
   "keywords": [
     "deepseek-harness",
