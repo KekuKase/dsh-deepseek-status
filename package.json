@@ -1,6 +1,6 @@
 {
-  "name": "dsh-status",
-  "version": "0.1.1",
+  "name": "dsh-deepseek-status",
+  "version": "0.1.0",
   "description": "DeepSeek Harness plugin: live DeepSeek official service status (status.deepseek.com) in the sidebar — overall status, component statuses, incidents, and uptime.",
   "keywords": [
     "deepseek-harness",
@@ -14,9 +14,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/KekuKase/dsh-status.git"
+    "url": "git+https://github.com/KekuKase/dsh-deepseek-status.git"
   },
-  "homepage": "https://github.com/KekuKase/dsh-status#readme",
+  "homepage": "https://github.com/KekuKase/dsh-deepseek-status#readme",
   "type": "module",
   "main": "lib/index.js",
   "files": [

@@ -1,4 +1,4 @@
-# dsh-status
+# dsh-deepseek-status
 
 DeepSeek Harness 插件：在 Web UI 侧边栏底部实时显示 **DeepSeek 官方服务状态**（status.deepseek.com 同源数据）。
 
@@ -11,11 +11,11 @@ DeepSeek Harness 插件：在 Web UI 侧边栏底部实时显示 **DeepSeek 官�
 
 ```sh
 # 从 npm
-dsh plugin --profile web add dsh-status
+dsh plugin --profile web add dsh-deepseek-status
 
 # 或从本地 checkout / tarball
-dsh plugin --profile web add ./dsh-status
-dsh plugin --profile web add ./dsh-status-0.1.0.tgz
+dsh plugin --profile web add ./dsh-deepseek-status
+dsh plugin --profile web add ./dsh-deepseek-status-0.1.0.tgz
 ```
 
 安装后重启 `dsh web`（新客户端插件需要重启进程才会被扫描进浏览器清单），即可在侧边栏左下角看到状态点。
@@ -27,16 +27,16 @@ dsh plugin --profile web add ./dsh-status-0.1.0.tgz
 1. profile patch 覆盖本 bundle 的行：
    ```yaml
    # $DSH_HOME/profiles/web/cordis.patch.yml
-   - id: dsh-status
+   - id: deepseek-status
      config:
        pollIntervalMs: 120000
    ```
 2. `$DSH_HOME/settings.yaml`（热更新）：
    ```yaml
-   dsh-status:
+   deepseek-status:
      pollIntervalMs: 120000
    ```
-3. Web 设置页「插件」卡片（安装本插件后自动出现 `dsh-status` 配置区）。
+3. Web 设置页「插件」卡片（安装本插件后自动出现 `deepseek-status` 配置区）。
 
 | 配置项 | 默认值 | 说明 |
 |---|---|---|
@@ -53,7 +53,7 @@ dsh plugin --profile web add ./dsh-status-0.1.0.tgz
 ## 卸载
 
 ```sh
-dsh plugin --profile web remove dsh-status
+dsh plugin --profile web remove dsh-deepseek-status
 ```
 
 ## License
