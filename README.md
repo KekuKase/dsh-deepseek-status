@@ -9,6 +9,12 @@ DeepSeek Harness 插件：在 Web UI 会话头部实时显示 **DeepSeek 官方�
 - 宿主进程每 60s 轮询官方状态页并解析（Next.js SSR flight 数据），浏览器每 30s 拉取本地同源路由（无 CORS 问题）
 - 上游故障时保留最后一次成功快照并显示「更新于 X 分钟前」，绝不显示假"正常"
 
+## 兼容性
+
+0.1.3 适配 DSH 0.1.2 的设置服务接口，同时保留旧版 `installSettingsSection` 接口兼容。已在 **Windows 和 WSL 的 DSH 0.1.2-rc.1** 上，以独立配置加载打包产物，验证启动、状态接口和实际轮询次数；5 项回归测试覆盖设置热更新、定时器释放、状态抓取失败后的快照保留，以及会话头部状态面板。
+
+此验证针对上述版本和场景，不代表对未来所有 DSH 版本的保证。配置变化后仅保留一个轮询定时器；上游不可用时面板会同时保留旧快照并提示抓取失败。
+
 ## 安装
 
 ```sh
@@ -17,10 +23,21 @@ dsh plugin --profile web add dsh-deepseek-status
 
 # 或从本地 checkout / tarball
 dsh plugin --profile web add ./dsh-deepseek-status
-dsh plugin --profile web add ./dsh-deepseek-status-0.1.0.tgz
+dsh plugin --profile web add ./dsh-deepseek-status-0.1.3.tgz
 ```
 
 安装后重启 `dsh web`（新客户端插件需要重启进程才会被扫描进浏览器清单），即可在会话头部看到状态点（点击展开详情面板）。
+
+GitHub 源码更新与 npm 发布是独立的。若 npm 尚未提供 0.1.3，可从此仓库构建安装包：
+
+```sh
+git clone https://github.com/KekuKase/dsh-deepseek-status.git
+cd dsh-deepseek-status
+npm pack
+dsh plugin --profile web add ./dsh-deepseek-status-0.1.3.tgz
+```
+
+`npm test` 运行无额外测试依赖的回归测试；`npm pack` 会先执行语法检查和测试。
 
 ## 配置
 
