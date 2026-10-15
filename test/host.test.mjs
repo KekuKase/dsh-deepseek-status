@@ -9,7 +9,7 @@ function statusHtml() {
   return `<script>self.__next_f.push([1,${JSON.stringify(JSON.stringify(data))}])</script>`;
 }
 
-async function host(entryConfig, { fail = false } = {}) {
+export async function host(entryConfig, { fail = false } = {}) {
   const timers = new Set(), cleanup = [], handlers = new Map();
   let route, failFetch = fail;
   const interval = (callback, delay) => {
@@ -29,7 +29,7 @@ async function host(entryConfig, { fail = false } = {}) {
     AbortSignal,
     fetch: async () => { if (failFetch) throw new Error('upstream unavailable'); return { ok: true, text: async () => statusHtml() }; },
   });
-  const schema = () => ({ default() { return this; }, min() { return this; }, max() { return this; } });
+  const schema = () => ({ default() { return this; }, min() { return this; }, max() { return this; }, volatile() { return this; } });
   const schemastery = new vm.SyntheticModule(['default'], function () { this.setExport('default', { object: value => value, string: schema, number: schema }); }, { context });
   const parser = new vm.SourceTextModule(await readFile(new URL('../lib/parser.js', import.meta.url), 'utf8'), { context });
   const plugin = new vm.SourceTextModule(await readFile(new URL('../lib/index.js', import.meta.url), 'utf8'), { context });
@@ -44,6 +44,7 @@ async function host(entryConfig, { fail = false } = {}) {
   return {
     timers,
     handlers,
+    context,
     failFetch() { failFetch = true; },
     async tick() { [...timers][0].callback(); await setImmediate(); },
     async response() {
@@ -99,4 +100,39 @@ test('upstream failure preserves the last snapshot and reports the failure', asy
   assert.deepEqual(after.components, before.components);
   assert.equal(after.error, 'upstream unavailable');
   plugin.dispose();
+});
+
+test('volatile config references are read through get()', async () => {
+  // This is the shape the Host hands to apply() once the Config fields are
+  // `.volatile()`: each field is a stable reference whose current value is read
+  // through get(). Reading them as plain numbers would compare an object with
+  // Number.isFinite and silently fall back to the default.
+  const ref = (value) => ({ value, get() { return this.value; } });
+  const plugin = await host({
+    statusUrl: ref('https://status.deepseek.com/'),
+    pollIntervalMs: ref(90000),
+    timeoutMs: ref(20000),
+  });
+  assert.equal([...plugin.timers][0].delay, 90000);
+  plugin.dispose();
+});
+
+test('a saved settings edit re-arms the poller without a restart', async () => {
+  // Cordis announces a volatile-only config commit as `loader/volatile-update`
+  // instead of remounting the fiber, so the handler must re-arm from the live
+  // references. Firing the event is how the Host reports a saved form edit.
+  const ref = (value) => ({ value, get() { return this.value; } });
+  const pollIntervalMs = ref(60000);
+  const plugin = await host({ pollIntervalMs });
+  assert.equal([...plugin.timers][0].delay, 60000);
+
+  const onVolatileUpdate = plugin.handlers.get('loader/volatile-update');
+  assert.equal(typeof onVolatileUpdate, 'function', 'the poller must subscribe to loader/volatile-update');
+
+  pollIntervalMs.value = 120000; // what the committed reference now reads
+  onVolatileUpdate();
+  assert.equal([...plugin.timers][0].delay, 120000);
+
+  plugin.dispose();
+  assert.equal(plugin.timers.size, 0);
 });
