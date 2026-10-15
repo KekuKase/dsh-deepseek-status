@@ -9,26 +9,17 @@ function statusHtml() {
   return `<script>self.__next_f.push([1,${JSON.stringify(JSON.stringify(data))}])</script>`;
 }
 
-async function host(api, { available = true } = {}) {
+async function host(entryConfig, { fail = false } = {}) {
   const timers = new Set(), cleanup = [], handlers = new Map();
-  let route, hooks, source, failFetch = false;
+  let route, failFetch = fail;
   const interval = (callback, delay) => {
     const timer = { callback, delay };
     timers.add(timer);
     return () => timers.delete(timer);
   };
-  const install = (owner, ns, schema, entry, consumer) => {
-    assert.equal(owner, ctx);
-    assert.equal(ns, 'deepseek-status');
-    hooks = consumer; source = entry;
-    hooks.setSource(() => source);
-    hooks.onChange();
-  };
-  let connect;
   const ctx = {
-    settings: { installSection: install },
     setInterval: interval,
-    inject(dependencies, callback) { assert.deepEqual(Array.from(dependencies), ['settings']); connect = () => callback(ctx); if (available) connect(); },
+    inject() { throw new Error('the host half must not inject a settings service'); },
     on(event, callback) { handlers.set(event, callback); },
     effect(callback) { const dispose = callback(); if (typeof dispose === 'function') cleanup.push(dispose); return dispose; },
     webServer: { register(value) { route = value; return () => { route = null; }; } },
@@ -40,24 +31,19 @@ async function host(api, { available = true } = {}) {
   });
   const schema = () => ({ default() { return this; }, min() { return this; }, max() { return this; } });
   const schemastery = new vm.SyntheticModule(['default'], function () { this.setExport('default', { object: value => value, string: schema, number: schema }); }, { context });
-  const settings = new vm.SyntheticModule(api === 'legacy' ? ['installSettingsSection'] : [], function () {
-    if (api === 'legacy') this.setExport('installSettingsSection', install);
-  }, { context });
   const parser = new vm.SourceTextModule(await readFile(new URL('../lib/parser.js', import.meta.url), 'utf8'), { context });
   const plugin = new vm.SourceTextModule(await readFile(new URL('../lib/index.js', import.meta.url), 'utf8'), { context });
   await plugin.link(name => {
     if (name === '@deepseek-ai/schemastery') return schemastery;
-    if (name === '@deepseek-ai/dsh-settings') return settings;
     if (name === './parser.js') return parser;
     throw new Error(`Unexpected import: ${name}`);
   });
   await plugin.evaluate();
-  plugin.namespace.apply(ctx, { pollIntervalMs: 60000 });
+  plugin.namespace.apply(ctx, entryConfig);
   await setImmediate();
   return {
     timers,
-    connect: () => connect(),
-    update(interval) { source = { pollIntervalMs: interval }; hooks.onChange(); handlers.get('settings/updated')?.('deepseek-status'); },
+    handlers,
     failFetch() { failFetch = true; },
     async tick() { [...timers][0].callback(); await setImmediate(); },
     async response() {
@@ -71,34 +57,40 @@ async function host(api, { available = true } = {}) {
   };
 }
 
-for (const api of ['legacy', 'provider']) {
-  test(`${api} settings API: import, hot updates and unload keep one disposable poller`, async () => {
-    const plugin = await host(api);
-    assert.equal(plugin.timers.size, 1);
-    assert.equal((await plugin.response()).overall, 'operational');
-    for (const delay of [30000, 45000, 120000]) {
-      plugin.update(delay);
-      assert.equal(plugin.timers.size, 1);
-      assert.equal([...plugin.timers][0].delay, delay);
-    }
-    plugin.dispose();
-    assert.equal(plugin.timers.size, 0);
-  });
-}
-
-test('an absent optional settings provider uses entry config and can attach later', async () => {
-  const plugin = await host('provider', { available: false });
+test('host half imports without any settings package', async () => {
+  // The vm linker above throws on an unexpected import, so reaching this line
+  // means lib/index.js no longer imports @deepseek-ai/dsh-settings, and apply()
+  // never injects a settings service.
+  const plugin = await host({});
   assert.equal(plugin.timers.size, 1);
-  assert.equal([...plugin.timers][0].delay, 60000);
-  plugin.connect();
-  plugin.update(90000);
+  plugin.dispose();
+  assert.equal(plugin.timers.size, 0);
+});
+
+test('the row config sets one poller delay', async () => {
+  const plugin = await host({ pollIntervalMs: 90000 });
   assert.equal(plugin.timers.size, 1);
   assert.equal([...plugin.timers][0].delay, 90000);
+  assert.equal((await plugin.response()).overall, 'operational');
+  plugin.dispose();
+  assert.equal(plugin.timers.size, 0);
+});
+
+test('a missing row config falls back to the documented defaults', async () => {
+  const plugin = await host(undefined);
+  assert.equal(plugin.timers.size, 1);
+  assert.equal([...plugin.timers][0].delay, 60000);
+  plugin.dispose();
+});
+
+test('an unknown config shape cannot produce a broken delay', async () => {
+  const plugin = await host({ pollIntervalMs: 0, statusUrl: '', timeoutMs: -1 });
+  assert.equal([...plugin.timers][0].delay, 60000);
   plugin.dispose();
 });
 
 test('upstream failure preserves the last snapshot and reports the failure', async () => {
-  const plugin = await host('provider');
+  const plugin = await host({ pollIntervalMs: 60000 });
   const before = await plugin.response();
   plugin.failFetch();
   await plugin.tick();
