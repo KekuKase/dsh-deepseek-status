@@ -1,6 +1,6 @@
 {
   "name": "dsh-deepseek-status",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "description": "DeepSeek Harness plugin: live DeepSeek official service status (status.deepseek.com) in the sidebar — overall status, component statuses, incidents, and uptime.",
   "keywords": [
     "deepseek-harness",
@@ -39,8 +39,7 @@
     "prepack": "npm run check"
   },
   "peerDependencies": {
-    "@deepseek-ai/schemastery": "^3.18.1",
-    "@deepseek-ai/dsh-settings": ">=0.0.1-rc.1"
+    "@deepseek-ai/schemastery": "^3.18.1"
   },
   "dsh": {
     "bundle": {

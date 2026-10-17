@@ -11,9 +11,23 @@ DeepSeek Harness 插件：在 Web UI 会话头部实时显示 **DeepSeek 官方�
 
 ## 兼容性
 
-0.1.3 适配 DSH 0.1.2 的设置服务接口，同时保留旧版 `installSettingsSection` 接口兼容。已在 **Windows 和 WSL 的 DSH 0.1.2-rc.1** 上，以独立配置加载打包产物，验证启动、状态接口和实际轮询次数；5 项回归测试覆盖设置热更新、定时器释放、状态抓取失败后的快照保留，以及会话头部状态面板。
+| 插件版本 | DSH | 说明 |
+|---|---|---|
+| **0.1.5** | **0.2.x** | **恢复设置界面**（两段式：宿主侧字段声明 `.volatile()`，浏览器半区注册配置卡片），保存后**无需重启**即生效。 |
+| 0.1.4 | 0.2.x | 移除 DSH 0.2 已删除的设置接缝（`installSettingsSection` / `settings.installSection` / `settings/updated`），配置改由 profile patch 中该行的 `config` 提供。**注意：0.1.4 起设置界面不可见，0.1.5 才把它恢复。** |
+| 0.1.2 / 0.1.3 | 0.1.x | 使用旧设置接口（`installSettingsSection` / `settings.installSection`），支持在设置里改轮询间隔并热更新。 |
 
-此验证针对上述版本和场景，不代表对未来所有 DSH 版本的保证。配置变化后仅保留一个轮询定时器；上游不可用时面板会同时保留旧快照并提示抓取失败。
+**0.1.5 实测环境**：Windows + DSH **0.2.0-rc.2**（`@deepseek-ai/dsh` 0.2.0-rc.2、`@deepseek-ai/schemastery` 3.18.4）；`npm test` **17 项通过**。
+
+- 配置变化后始终只保留**一个**轮询定时器；
+- 上游不可用时，面板保留最后一次成功快照并同时提示抓取失败，绝不显示假「正常」。
+
+⚠️ **关于 0.1.x（未核实）**：0.1.5 的浏览器半区会注入 0.2 的设置服务（`configForms`）来注册配置卡片。
+若 0.1.x 的客户端没有该服务，按 Cordis 的语义整个浏览器半区会保持 pending（即状态挂件也**不会**出现）。
+**这一点我没有在 0.1.x 上实测过**，所以不确定；如果你在 0.1.x 上使用，请先备份，或先用 0.1.3。
+若需要 0.1.5 无条件兼容 0.1.x（最坏情况下只是不显示配置区），把该依赖改成可选注入即可。
+
+此验证针对上述版本与场景，不代表对未来所有 DSH 版本的保证。
 
 ## 安装
 
@@ -23,21 +37,23 @@ dsh plugin --profile web add dsh-deepseek-status
 
 # 或从本地 checkout / tarball
 dsh plugin --profile web add ./dsh-deepseek-status
-dsh plugin --profile web add ./dsh-deepseek-status-0.1.3.tgz
+dsh plugin --profile web add ./dsh-deepseek-status-0.1.5.tgz
 ```
 
 安装后重启 `dsh web`（新客户端插件需要重启进程才会被扫描进浏览器清单），即可在会话头部看到状态点（点击展开详情面板）。
+桌面端则是在**侧栏「插件」页**安装/查看，profile 名为 `desktop`；升级或替换已安装的插件包后同样需要**完全重启客户端**（宿主代码不会热加载）。
 
-GitHub 源码更新与 npm 发布是独立的。若 npm 尚未提供 0.1.3，可从此仓库构建安装包：
+GitHub 源码更新与 npm 发布是独立的。若 npm 尚未提供 0.1.5，可从此仓库构建安装包：
 
 ```sh
 git clone https://github.com/KekuKase/dsh-deepseek-status.git
 cd dsh-deepseek-status
 npm pack
-dsh plugin --profile web add ./dsh-deepseek-status-0.1.3.tgz
+dsh plugin --profile web add ./dsh-deepseek-status-0.1.5.tgz
 ```
 
-`npm test` 运行无额外测试依赖的回归测试；`npm pack` 会先执行语法检查和测试。
+`npm test` 运行回归测试；`npm pack` 会先执行语法检查和测试。
+其中一项测试会用真实的 `@deepseek-ai/schemastery` 校验配置 schema——该 peer 依赖未安装时它会自动跳过（其余测试照常运行）。
 
 ## 配置
 
@@ -50,12 +66,18 @@ dsh plugin --profile web add ./dsh-deepseek-status-0.1.3.tgz
      config:
        pollIntervalMs: 120000
    ```
-2. `$DSH_HOME/settings.yaml`（热更新）：
-   ```yaml
-   deepseek-status:
-     pollIntervalMs: 120000
-   ```
-3. Web 设置页「插件」卡片（安装本插件后自动出现 `deepseek-status` 配置区）。
+2. `$DSH_HOME/settings.yaml`（旧版 DSH 的兼容路径；DSH 0.2 起由设置表单写入 profile patch）
+3. 侧栏 **插件页**（内置插件 / 已装插件）里本插件的配置区，可改上面三项并保存。
+
+表单是**两段式**实现的，因为 DSH 0.2 **不会**按 schema 自动建表单（`autoGenerate` 只是随数据传递、没有任何客户端读它）：
+
+- **宿主半区**把三个 `Config` 字段声明为 `.volatile()`——Host 设置服务只投影易变字段，这是表单能被 `describe()` 出来的前提；
+- **浏览器半区**注册一张配置卡片，key 必须与插件页自己拼的**完全一致**：
+  - `plugins.bundle.config` → `dsh-deepseek-status`（包名）
+  - `plugins.row.config` → `dsh-deepseek-status#deepseek-status`（`` `${包名}#${行id}` ``）
+  注册还包在 `ctx.configForms.whileServed([...])` 里，只有宿主真的提供该命名空间时才注册；两处注册都独立 try/catch，失败只记警告，绝不影响状态挂件。
+
+保存后**无需重启**：易变字段解析成可读引用，Cordis 把「仅易变字段变化」提交进运行中的引用并广播 `loader/volatile-update`，插件据此重新挂载轮询定时器。实测：把间隔从 60000 改成 120000 并保存后，下一次抓取正好在 120 秒后发生，全程未重启。
 
 | 配置项 | 默认值 | 说明 |
 |---|---|---|
