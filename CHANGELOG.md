@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Docs: the package description advertised the widget as living "in the sidebar", but the browser
+  half has registered into `conversation.session.header.utilities` — the conversation header —
+  since `ffb0cbf`, and the README already says "in the Web UI session header". On DSH Next the left
+  sidebar is a different surface, so the old wording sends users looking in the wrong place. The
+  description now matches the README.
+
 ## 0.1.5
 
 - Restore the plugin's settings in the UI, as a two-part fix. 0.1.4 removed the settings seam DSH 0.2
