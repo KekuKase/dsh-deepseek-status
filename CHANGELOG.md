@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.6
+
+- Make the status panel opaque on DSH 0.2.2. The 2026-11-04 desktop theme ships `--dsw-specific-menu`
+  as a 64%-opaque menu fill (`#303136a3` dark, `#fcfdfeb3` light) intended to sit under the official
+  menu backdrop blur; the panel painted that token as its only background and applied no blur, so the
+  page behind it showed through and mixed with the panel text. The panel now paints the same token as a
+  gradient over the opaque `--dsw-alias-bg-layer-2`: the theme tint is preserved, the result is opaque,
+  and nothing else changes.
+- No behaviour or configuration change. Verified on Windows + DSH 0.2.2-rc.1 (desktop, dark theme):
+  the panel is opaque after a restart, the header widget still renders, `GET /deepseek-status/current`
+  returns 200, polling keeps its configured interval, and `npm test` passes 17/17.
+
 ## 0.1.5
 
 - Restore the plugin's settings in the UI, as a two-part fix. 0.1.4 removed the settings seam DSH 0.2

@@ -13,11 +13,14 @@ DeepSeek Harness 插件：在 Web UI 会话头部实时显示 **DeepSeek 官方�
 
 | 插件版本 | DSH | 说明 |
 |---|---|---|
+| **0.1.6** | **0.2.x** | **状态面板改为不透明**：DSH 0.2.2 的菜单色 `--dsw-specific-menu` 只有 64% 不透明，之前会透出页面文字；现在把同一颜色叠在不透明底色上，观感不变、不再透字。无行为/配置变化。 |
 | **0.1.5** | **0.2.x** | **恢复设置界面**（两段式：宿主侧字段声明 `.volatile()`，浏览器半区注册配置卡片），保存后**无需重启**即生效。 |
 | 0.1.4 | 0.2.x | 移除 DSH 0.2 已删除的设置接缝（`installSettingsSection` / `settings.installSection` / `settings/updated`），配置改由 profile patch 中该行的 `config` 提供。**注意：0.1.4 起设置界面不可见，0.1.5 才把它恢复。** |
 | 0.1.2 / 0.1.3 | 0.1.x | 使用旧设置接口（`installSettingsSection` / `settings.installSection`），支持在设置里改轮询间隔并热更新。 |
 
 **0.1.5 实测环境**：Windows + DSH **0.2.0-rc.2**（`@deepseek-ai/dsh` 0.2.0-rc.2、`@deepseek-ai/schemastery` 3.18.4）；`npm test` **17 项通过**。
+
+**0.1.6 实测环境**：Windows + DSH **0.2.2-rc.1**（`@deepseek-ai/dsh` 0.2.2-rc.1、`@deepseek-ai/schemastery` 3.19.0）；重启后面板不透明、挂件与 120 秒轮询正常；`npm test` **17 项通过**。
 
 - 配置变化后始终只保留**一个**轮询定时器；
 - 上游不可用时，面板保留最后一次成功快照并同时提示抓取失败，绝不显示假「正常」。
@@ -37,19 +40,21 @@ dsh plugin --profile web add dsh-deepseek-status
 
 # 或从本地 checkout / tarball
 dsh plugin --profile web add ./dsh-deepseek-status
-dsh plugin --profile web add ./dsh-deepseek-status-0.1.5.tgz
+dsh plugin --profile web add ./dsh-deepseek-status-0.1.6.tgz
 ```
+
+> ⚠️ npm 上的 `latest` 目前仍停在 **0.1.3**（2026-09-06 发布）：在作者更新 npm 之前，按包名安装 `dsh-deepseek-status` 会拿到旧版（在 DSH 0.2.x 上启动即报 `installSection is not a function`）。请使用上面的本地 tarball / 源码方式安装。
 
 安装后重启 `dsh web`（新客户端插件需要重启进程才会被扫描进浏览器清单），即可在会话头部看到状态点（点击展开详情面板）。
 桌面端则是在**侧栏「插件」页**安装/查看，profile 名为 `desktop`；升级或替换已安装的插件包后同样需要**完全重启客户端**（宿主代码不会热加载）。
 
-GitHub 源码更新与 npm 发布是独立的。若 npm 尚未提供 0.1.5，可从此仓库构建安装包：
+GitHub 源码更新与 npm 发布是独立的。若 npm 尚未提供 0.1.6，可从此仓库构建安装包：
 
 ```sh
 git clone https://github.com/KekuKase/dsh-deepseek-status.git
 cd dsh-deepseek-status
 npm pack
-dsh plugin --profile web add ./dsh-deepseek-status-0.1.5.tgz
+dsh plugin --profile web add ./dsh-deepseek-status-0.1.6.tgz
 ```
 
 `npm test` 运行回归测试；`npm pack` 会先执行语法检查和测试。
